@@ -1,31 +1,38 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const app = express();
-app.use(express.json());
-const cors = require('cors');
-app.use(cors());
 require('dotenv').config();
-const userRoutes = require('./routes/user.routes');
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
 
+const todoRoutes = require('./routes/todos');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
 
+const app = express();
 const PORT = process.env.PORT || 5000;
 
-// MongoDB connection
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-mongoose.connect('mongodb+srv://shubhamKhangar_easyhire:shubhamKhangar_easyhire@clustereasyhire.vn68toe.mongodb.net/easyHire?retryWrites=true&w=majority&appName=ClusterEasyHire').then(() => {
-    console.log('MongoDB connected');
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/todos', todoRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Todo API is running' });
+});
+
+// Connect to MongoDB and start server
+mongoose
+  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/todo-app')
+  .then(() => {
     app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}/health`);
-    console.log("follow link `localhost:${PORT}/health` to check server status");
-});
-}).catch(err => {
-    console.error('MongoDB connection error:', err);
-});
-
-// health check endpoint
-app.get('/', (req, res) => {
-    res.send('API is running...');
-});
-
-// Define routes here
- app.use('/api/users', userRoutes);
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  });
